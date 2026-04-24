@@ -4,6 +4,8 @@ from flask import Flask, request, Response
 from twilio.twiml.messaging_response import MessagingResponse
 from twilio.twiml.voice_response import VoiceResponse, Dial
 from twilio.rest import Client
+from twilio.request_validator import RequestValidator
+from functools import wraps
 from dotenv import load_dotenv
 from apscheduler.schedulers.background import BackgroundScheduler
 from database import init_db, save_message, save_call, get_last_sender_by_last_four, has_recent_activity
@@ -28,6 +30,26 @@ logging.basicConfig(
 )
 
 client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+
+def validate_twilio_request(f):
+    """Decorator to validate that a request comes from Twilio."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        signature = request.headers.get('X-Twilio-Signature', '')
+
+        proto = request.headers.get('X-Forwarded-Proto', 'http')
+        url = f"{proto}://{request.host}{request.full_path}"
+        if url.endswith('?'):
+            url = url[:-1]
+
+        validator = RequestValidator(TWILIO_AUTH_TOKEN)
+        
+        if not validator.validate(url, request.form, signature):
+            logging.warning(f"Invalid Twilio signature for URL: {url}")
+            return Response("Invalid signature", status=403)
+            
+        return f(*args, **kwargs)
+    return decorated_function
 
 def send_keep_alive():
     """Send a keep-alive message to the relay number if no recent activity."""
@@ -57,6 +79,7 @@ def health_check():
     return "Relay App is running!", 200
 
 @app.route("/sms", methods=['POST'])
+@validate_twilio_request
 def sms_reply():
     """Respond to incoming messages."""
     from_number = request.form.get('From')
@@ -112,6 +135,7 @@ def sms_reply():
     return str(resp)
 
 @app.route("/voice", methods=['POST'])
+@validate_twilio_request
 def voice_reply():
     """Respond to incoming calls."""
     from_number = request.form.get('From')
@@ -139,4 +163,4 @@ def voice_reply():
     return str(resp)
 
 if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', port=8000)
+    app.run(debug=False, host='0.0.0.0', port=8000)
