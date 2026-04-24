@@ -24,4 +24,4 @@ Create a `.env` file with the following (these will be picked up by `docker-comp
 3. Configure your Twilio number webhooks:
    - Messaging: `https://your-domain.com/sms`
    - Voice: `https://your-domain.com/voice`
-3. Run locally: `python app.py` or use Docker: `docker-compose up -d`
+4. Run locally: `python app.py` or use Docker: `docker-compose up -d`
