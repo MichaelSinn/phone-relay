@@ -1,0 +1,13 @@
+services:
+  relay-app:
+    build: .
+    ports:
+      - "8111:8000"
+    environment:
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+      - TWILIO_NUMBER=${TWILIO_NUMBER}
+      - RELAY_TO_NUMBER=${RELAY_TO_NUMBER}
+    volumes:
+      - ./data:/app/data
+    restart: always
