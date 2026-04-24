@@ -5,7 +5,8 @@ from twilio.twiml.messaging_response import MessagingResponse
 from twilio.twiml.voice_response import VoiceResponse, Dial
 from twilio.rest import Client
 from dotenv import load_dotenv
-from database import init_db, save_message, save_call, get_last_sender_by_last_four
+from apscheduler.schedulers.background import BackgroundScheduler
+from database import init_db, save_message, save_call, get_last_sender_by_last_four, has_recent_activity
 from models import MessageRecord, CallRecord
 
 load_dotenv()
@@ -27,6 +28,28 @@ logging.basicConfig(
 )
 
 client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+
+def send_keep_alive():
+    """Send a keep-alive message to the relay number if no recent activity."""
+    try:
+        if has_recent_activity(days=7):
+            logging.info("Recent activity detected within 7 days. Skipping keep-alive message.")
+            return
+
+        logging.info("No recent activity detected. Sending keep-alive message...")
+        client.messages.create(
+            to=RELAY_TO_NUMBER,
+            from_=TWILIO_NUMBER,
+            body="Twilio Relay Keep-Alive: This is a weekly automated message to keep this number active."
+        )
+        logging.info("Keep-alive message sent successfully.")
+    except Exception as e:
+        logging.error(f"Failed to send keep-alive message: {e}")
+
+# Initialize scheduler
+scheduler = BackgroundScheduler()
+scheduler.add_job(func=send_keep_alive, trigger="cron", day_of_week="mon", hour=10, minute=0)
+scheduler.start()
 
 @app.route("/", methods=['GET'])
 def health_check():

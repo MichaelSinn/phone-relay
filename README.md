@@ -7,6 +7,7 @@ This application acts as a phone relay using Twilio. It forwards incoming SMS an
 - **SMS Replying**: To reply, send a message from the `RELAY_TO_NUMBER` to the Twilio number, starting with the last 4 digits of the target phone number.
   - Example: `1234 Hello there!` will send `Hello there!` to the most recent sender whose number ends in `1234`.
 - **Voice Forwarding**: Incoming calls are automatically dialed to the `RELAY_TO_NUMBER`.
+- **Keep-Alive**: Automatically sends a weekly text message to the `RELAY_TO_NUMBER` every Monday at 10 AM to prevent the Twilio number from being reclaimed.
 - **Logging & Storage**: All incoming events are logged to `relay.log` and stored in a SQLite database (`relay.db`) using SQLAlchemy and Pydantic for validation.
 
 ## Environment Variables

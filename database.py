@@ -1,7 +1,7 @@
 import os
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text
 from sqlalchemy.orm import declarative_base, sessionmaker
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from models import MessageRecord, CallRecord
 
 Base = declarative_base()
@@ -63,3 +63,11 @@ def get_last_sender_by_last_four(last_four: str, to_number: str):
     ).order_by(Message.timestamp.desc()).first()
     db.close()
     return result.from_number if result else None
+
+def has_recent_activity(days: int = 7):
+    """Check if there has been any message activity in the last `days`."""
+    db = SessionLocal()
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    result = db.query(Message).filter(Message.timestamp >= cutoff).first()
+    db.close()
+    return result is not None
