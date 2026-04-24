@@ -70,7 +70,7 @@ def send_keep_alive():
 
 # Initialize scheduler
 scheduler = BackgroundScheduler()
-scheduler.add_job(func=send_keep_alive, trigger="cron", day_of_week="mon", hour=10, minute=0)
+scheduler.add_job(func=send_keep_alive, trigger="cron", hour=10, minute=0)
 scheduler.start()
 
 @app.route("/", methods=['GET'])
